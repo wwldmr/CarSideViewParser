@@ -1,19 +1,14 @@
+import time
 import requests
-import shutil
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+
 def download_image(url, filename):
-    if url.startswith('data:image/'):
-        # Изображение в кодировке Base64
-        print(f"Skipping base64Сoded image: {url}")
-        return
-    else:
-        # Обычный URL изображения
-        response = requests.get(url, stream=True)
-        with open(filename, 'wb') as f:
-            response.raw.decode_content = True
-            shutil.copyfileobj(response.raw, f)
+    response = requests.get(url, stream=True)
+    with open(filename, 'wb') as file:
+        file.write(response.content)
+
 
 def search_and_download(query, num_images):
     driver = webdriver.Firefox()
@@ -21,9 +16,16 @@ def search_and_download(query, num_images):
 
     images = driver.find_elements(By.XPATH, '//img[contains(@class,"rg_i")]')
 
-    for i, img in enumerate(images[:num_images]):
-        image_url = img.get_attribute('src')
-        download_image(image_url, f"C:/projects/CarSideViewParser/downloads/{query}_{i}.jpg")
+    for i, img in enumerate(images):
+        img.click()
+        time.sleep(2)
+        image_url = driver.find_element(By.CLASS_NAME, 'iPVvYb').get_attribute('src')
+        if image_url.startswith('data:image/'):
+            continue
+        download_image(image_url, f"./downloads/{query}_{i}.jpg")
+        driver.find_element(By.CSS_SELECTOR, '[aria-label="Закрыть"]').click()
+    driver.quit()
+
 
 search_query = input("Что: ")
 num_images_to_download = int(input("Сколько: "))
