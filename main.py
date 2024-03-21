@@ -6,9 +6,9 @@ from selenium.webdriver.common.by import By
 
 
 def download_image(url, filename):
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True).content
     with open(filename, 'wb') as file:
-        file.write(response.content)
+        file.write(response)
 
 
 def search_and_download(query, num_images):
@@ -27,7 +27,7 @@ def search_and_download(query, num_images):
         if image_url.startswith('data:image/'):
             continue
         download_image(image_url, f"./downloads/{query}_{i}.jpg")
-        driver.find_element(By.CSS_SELECTOR, '[aria-label="Закрыть"]').click()
+        driver.find_element(By.CLASS_NAME, 'uj1Jfd').click()
     driver.quit()
 
 
