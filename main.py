@@ -1,3 +1,4 @@
+import os
 import time
 import requests
 from selenium import webdriver
@@ -11,6 +12,9 @@ def download_image(url, filename):
 
 
 def search_and_download(query, num_images):
+    if not os.path.exists('downloads'):
+        os.makedirs('downloads')
+
     driver = webdriver.Firefox()
     driver.get(f"https://www.google.com/search?q={query}&tbm=isch")
 
