@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import ElementNotInteractableException
 
 
 def download_image(url, filename):
@@ -37,10 +38,10 @@ def load_page(driver):
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
             try:
-                # click on show more button (in one
+                # click on show more button (in my query is one on page)
                 driver.find_element(By.CLASS_NAME, "LZ4I").click()
                 break
-            except Exception as e:
+            except ElementNotInteractableException as e:
                 print(e)
         last_height = new_height
 
@@ -51,9 +52,11 @@ def scroll_to_top(driver):
 
 
 def search_and_download(query, num_images):
+    # creates a directory where photos will be uploaded
     if not os.path.exists(f'downloads/{query}'):
         os.makedirs(f'downloads/{query}')
 
+    # use your browser if you need this
     driver = webdriver.Chrome()
     driver.get(f"https://www.google.com/search?q={query}&source=lnms&tbm=isch")
 
@@ -62,6 +65,8 @@ def search_and_download(query, num_images):
     # that closes the additional page on the left
     # on this cause additional page is not visible
     delete_header(driver)
+
+    # preload page for the driver to find all the pics
     load_page(driver)
     scroll_to_top(driver)
 
@@ -69,18 +74,21 @@ def search_and_download(query, num_images):
 
     for i, img in enumerate(images[:num_images]):
         try:
-            img.click()
+            try:
+                img.click()
+            except ElementNotInteractableException as e:
+                print(img, e)
+                continue
             image_src = WebDriverWait(driver, 4).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'iPVvYb'))
             ).get_attribute('src')
             try:
-                download_image(image_src, f"./downloads/{query}/{os.path.basename(image_src)}")
+                download_image(image_src, f"./downloads/{query}/{query}_{i}.jpg")    # os.path.basename(image_src)
             except Exception as e:
                 print("Probably base64 encoded pic ", e)
                 continue
             # finds the close button on the additional page on the left
             driver.execute_script("document.querySelector('.uj1Jfd').click();")
-
         except TimeoutException as e:
             print(e)
             driver.execute_script("document.querySelector('.uj1Jfd').click();")
