@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 
 def download_image(url, filename):
@@ -24,7 +25,7 @@ def delete_header(driver):
     time.sleep(1)
 
 
-def scroll_to_bottom(driver):
+def load_page(driver):
     # Get scroll height
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
@@ -35,43 +36,52 @@ def scroll_to_bottom(driver):
         # Calculate new scroll height and compare with last scroll height
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
-            break
+            try:
+                # click on show more button (in one
+                driver.find_element(By.CLASS_NAME, "LZ4I").click()
+                break
+            except Exception as e:
+                print(e)
         last_height = new_height
 
+
 def scroll_to_top(driver):
-    # Scroll up to upwards
     driver.execute_script("window.scrollTo(0, 0);")
     time.sleep(1)
+
 
 def search_and_download(query, num_images):
     if not os.path.exists(f'downloads/{query}'):
         os.makedirs(f'downloads/{query}')
 
-    driver = webdriver.Firefox()
+    driver = webdriver.Chrome()
     driver.get(f"https://www.google.com/search?q={query}&source=lnms&tbm=isch")
 
+    # there was a need to remove the header
+    # because it did not allow to click on the button
+    # that closes the additional page on the left
+    # on this cause additional page is not visible
     delete_header(driver)
-    scroll_to_bottom(driver)
+    load_page(driver)
     scroll_to_top(driver)
 
     images = driver.find_elements(By.XPATH, '//img[contains(@class,"rg_i")]')
 
     for i, img in enumerate(images[:num_images]):
-        print(f"{img}\n")
         try:
             img.click()
-            image_src = WebDriverWait(driver, 5).until(
+            image_src = WebDriverWait(driver, 4).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'iPVvYb'))
             ).get_attribute('src')
-            if image_src.startswith("data:image/"):
+            try:
+                download_image(image_src, f"./downloads/{query}/{os.path.basename(image_src)}")
+            except Exception as e:
+                print("Probably base64 encoded pic ", e)
                 continue
-            download_image(image_src, f"./downloads/{query}/{query}_{i}.jpg")
-
-            # Выполняет JavaScript код, который находит кнопку закрытия
-            # selenium не справился (я тоже)
+            # finds the close button on the additional page on the left
             driver.execute_script("document.querySelector('.uj1Jfd').click();")
 
-        except Exception as e:
+        except TimeoutException as e:
             print(e)
             driver.execute_script("document.querySelector('.uj1Jfd').click();")
             continue
@@ -79,7 +89,7 @@ def search_and_download(query, num_images):
     driver.quit()
 
 
-search_query = input("Что: ")
-num_images_to_download = int(input("Сколько: "))
+search_query = "car side view"
+num_of_images = 1000
 
-search_and_download(search_query, num_images_to_download)
+search_and_download(search_query, num_of_images)
