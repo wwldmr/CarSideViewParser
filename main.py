@@ -36,12 +36,14 @@ def load_page(driver):
         time.sleep(1)
         # Calculate new scroll height and compare with last scroll height
         new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            try:
-                # click on show more button (in my query is one on page)
-                driver.find_element(By.CLASS_NAME, "LZ4I").click()
-            except ElementNotInteractableException as e:
-                print(e)
+        # click on show more button (in my query is one on page)
+        for i in range(1):
+            if new_height == last_height:
+                try:
+                    driver.find_element(By.CLASS_NAME, "LZ4I").click()
+                except ElementNotInteractableException as e:
+                    print(e)
+                    return False
         last_height = new_height
 
 
@@ -67,35 +69,33 @@ def search_and_download(query, num_images):
 
     # preload page for the driver to find all the pics
     load_page(driver)
-    # scroll_to_top(driver)
-
-    time.sleep(1000)
+    scroll_to_top(driver)
 
     images = driver.find_elements(By.XPATH, '//img[contains(@class,"rg_i")]')
 
-    # for i, img in enumerate(images[:num_images]):
-    #     try:
-    #         try:
-    #             img.click()
-    #         except ElementNotInteractableException as e:
-    #             print(img, e)
-    #             continue
-    #         image_src = WebDriverWait(driver, 4).until(
-    #             EC.presence_of_element_located((By.CLASS_NAME, 'iPVvYb'))
-    #         ).get_attribute('src')
-    #         try:
-    #             download_image(image_src, f"./downloads/{query}/{query}_{i}.jpg")    # os.path.basename(image_src)
-    #         except Exception as e:
-    #             print("Probably base64 encoded pic ", e)
-    #             continue
-    #         # finds the close button on the additional page on the left
-    #         driver.execute_script("document.querySelector('.uj1Jfd').click();")
-    #     except TimeoutException as e:
-    #         print(e)
-    #         driver.execute_script("document.querySelector('.uj1Jfd').click();")
-    #         continue
-    #
-    # driver.quit()
+    for i, img in enumerate(images[:num_images]):
+        try:
+            try:
+                img.click()
+            except ElementNotInteractableException as e:
+                print(img, e)
+                continue
+            image_src = WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'iPVvYb'))
+            ).get_attribute('src')
+            try:
+                download_image(image_src, f"./downloads/{query}/{query}_{i}.jpg")    # os.path.basename(image_src)
+            except Exception as e:
+                print("Probably base64 encoded pic ", e)
+                continue
+            # finds the close button on the additional page on the left
+            driver.execute_script("document.querySelector('.uj1Jfd').click();")
+        except TimeoutException as e:
+            print(e)
+            driver.execute_script("document.querySelector('.uj1Jfd').click();")
+            continue
+
+    driver.quit()
 
 
 search_query = "car side view"
